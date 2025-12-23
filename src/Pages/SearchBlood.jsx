@@ -15,6 +15,7 @@ import {
   faQuestionCircle,
   faCheckCircle,
   faClock,
+  faArrowRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,7 +54,7 @@ const SearchBlood = () => {
   const notifyModalRef = useRef(null);
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Bhubaneswar','Hyderabadn'];
+  const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Bhubaneswar', 'Hyderabad'];
 
   const mockData = [
     {
@@ -70,20 +71,20 @@ const SearchBlood = () => {
       lastUpdated: Date.now() - 3600000,
       bloodAvailability: { 'A+': 10, 'A-': 3, 'B+': 8, 'B-': 2, 'AB+': 5, 'AB-': 1, 'O+': 15, 'O-': 4 },
     },
-    {
-      id: '2',
-      name: 'Red Cross Blood Bank',
-      type: 'NGO',
-      address: '456 Connaught Place, Delhi',
-      latitude: 28.6328,
-      longitude: 77.2167,         
-      contact: '+91-11-98765432',
-      website: 'https://www.redcrossindia.org',
-      is24Hour: false,
-      distance: 5.0,
-      lastUpdated: Date.now() - 7200000,
-      bloodAvailability: { 'A+': 12, 'A-': 4, 'B+': 6, 'B-': 1, 'AB+': 3, 'AB-': 0, 'O+': 10, 'O-': 2 },
-    },
+    // {
+    //   id: '2',
+    //   name: 'Red Cross Blood Bank',
+    //   type: 'NGO',
+    //   address: '456 Connaught Place, Delhi',
+    //   latitude: 28.6328,
+    //   longitude: 77.2167,
+    //   contact: '+91-11-98765432',
+    //   website: 'https://www.redcrossindia.org',
+    //   is24Hour: false,
+    //   distance: 5.0,
+    //   lastUpdated: Date.now() - 7200000,
+    //   bloodAvailability: { 'A+': 12, 'A-': 4, 'B+': 6, 'B-': 1, 'AB+': 3, 'AB-': 0, 'O+': 10, 'O-': 2 },
+    // },
     {
       id: '3',
       name: 'Fortis Blood Bank',
@@ -140,20 +141,20 @@ const SearchBlood = () => {
       lastUpdated: Date.now() - 7200000,
       bloodAvailability: { 'A+': 6, 'A-': 2, 'B+': 5, 'B-': 1, 'AB+': 3, 'AB-': 0, 'O+': 10, 'O-': 2 },
     },
-    {
-      id: '7',
-      name: 'Max Super Speciality Blood Bank',
-      type: 'Hospital',
-      address: '654 Saket, Delhi',
-      latitude: 28.5273,
-      longitude: 77.2119,
-      contact: '+91-11-45678901',
-      website: 'https://www.maxhealthcare.in',
-      is24Hour: true,
-      distance: 4.0,
-      lastUpdated: Date.now() - 3600000,
-      bloodAvailability: { 'A+': 14, 'A-': 4, 'B+': 8, 'B-': 2, 'AB+': 5, 'AB-': 1, 'O+': 18, 'O-': 6 },
-    },
+    // {
+    //   id: '7',
+    //   name: 'Max Super Speciality Blood Bank',
+    //   type: 'Hospital',
+    //   address: '654 Saket, Delhi',
+    //   latitude: 28.5273,
+    //   longitude: 77.2119,
+    //   contact: '+91-11-45678901',
+    //   website: 'https://www.maxhealthcare.in',
+    //   is24Hour: true,
+    //   distance: 4.0,
+    //   lastUpdated: Date.now() - 3600000,
+    //   bloodAvailability: { 'A+': 14, 'A-': 4, 'B+': 8, 'B-': 2, 'AB+': 5, 'AB-': 1, 'O+': 18, 'O-': 6 },
+    // },
     {
       id: '8',
       name: 'Lions Blood Bank',
@@ -240,7 +241,6 @@ const SearchBlood = () => {
     setErrors({});
     setHasSearched(true);
 
-    // Save recent search
     const newSearch = { bloodGroups: formData.bloodGroups, city: formData.city, timestamp: Date.now() };
     const updatedSearches = [
       newSearch,
@@ -250,13 +250,10 @@ const SearchBlood = () => {
     ].slice(0, 5);
     setRecentSearches(updatedSearches);
     localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-    // showToast('Search saved!');
 
     try {
-      // Store selected blood groups for results display
       setSelectedBloodGroups(formData.bloodGroups);
 
-      // Filter results based on form data
       const filteredResults = mockData
         .filter((item) => {
           const matchesBloodGroup = formData.bloodGroups.some((bg) => item.bloodAvailability[bg] > 0);
@@ -328,9 +325,7 @@ const SearchBlood = () => {
             ),
           });
         }
-        // Do not reset form to allow "Notify Me"
       } else {
-        // Reset form only if results are found
         setFormData({
           bloodGroups: [],
           city: '',
@@ -426,21 +421,17 @@ const SearchBlood = () => {
       return;
     }
 
-    // Capture current formData for modal display
     const subscription = {
-      bloodGroups: [...formData.bloodGroups], // Ensure bloodGroups is copied
+      bloodGroups: [...formData.bloodGroups],
       city: formData.city,
       urgency: formData.urgency,
     };
     localStorage.setItem('notifySubscription', JSON.stringify(subscription));
 
-    // Show modal
     setShowNotifyModal(true);
 
-    // Reset form after setting notification
     setFormData({ bloodGroups: [], city: '', urgency: 'immediate', radius: '10' });
     setErrors({});
-    // showToast('Notification subscription saved!');
   };
 
   const showToast = (message) => {
@@ -488,9 +479,8 @@ const SearchBlood = () => {
     (s) => s.timestamp > Date.now() - 7 * 24 * 60 * 60 * 1000
   ).length;
 
-  const isNotifyDisabled = () => {
-    return formData.bloodGroups.length === 0 || !formData.city.trim() || !formData.urgency;
-  };
+  // Notify button is ALWAYS disabled except when no blood is found after a valid search
+  const noBloodFound = hasSearched && results.length === 0 && formData.bloodGroups.length > 0 && formData.city.trim();
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto bg-gradient-to-b from-gray-100 to-red-50 min-h-screen">
@@ -811,40 +801,63 @@ const SearchBlood = () => {
               )}
             </div>
           </div>
+         {/* Buttons Section - 75% Search + 25% Notify in same row */}
+<div className="flex flex-col sm:flex-row gap-4 mt-6">
+  {/* Search Button - 75% width */}
+  <button
+    type="submit"
+    disabled={loading}
+    className={`flex-[3] py-4 px-6 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all duration-300 flex items-center justify-center text-lg sm:text-xl min-h-[48px] hover:scale-105 ${
+      loading ? 'opacity-50 cursor-not-allowed' : ''
+    }`}
+  >
+    {loading ? (
+      <>
+        <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"
+          />
+        </svg>
+        Searching...
+      </>
+    ) : (
+      <>
+        <FontAwesomeIcon icon={faSearch} className="mr-3" />
+        Search Blood
+      </>
+    )}
+  </button>
 
-          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className={`flex-1 py-4 px-4 sm:px-6 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all duration-300 flex items-center justify-center text-lg sm:text-xl min-h-[48px] hover:scale-105 ${
-                loading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {loading ? (
-                <svg className="animate-spin h-6 w-6 mr-2 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"
-                  />
-                </svg>
-              ) : (
-                <FontAwesomeIcon icon={faSearch} className="mr-2" />
+  {/* Notify Me Button - 25% width */}
+  <div className="relative flex-[1]">
+    <button
+      type="button"
+      onClick={handleNotify}
+      disabled={!noBloodFound}
+      className={`w-full py-4 px-6 text-white rounded-xl font-semibold transition-all duration-300 flex items-center justify-center text-lg sm:text-xl min-h-[48px] hover:scale-105 whitespace-nowrap ${
+        noBloodFound
+          ? 'bg-blue-600 hover:bg-blue-700 animate-pulse'
+          : 'bg-gray-400 cursor-not-allowed opacity-50'
+      }`}
+    >
+      <FontAwesomeIcon icon={faBell} className="mr-2" />
+      Notify Me
+    </button>
+              {/* Hint only when no blood found */}
+              {noBloodFound && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center space-x-1 z-10"
+                >
+                  <span>Click to get notified!</span>
+                  <FontAwesomeIcon icon={faArrowRight} className="animate-pulse" />
+                </motion.div>
               )}
-              {loading ? 'Searching...' : 'Search Blood'}
-            </button>
-            <button
-              type="button"
-              onClick={handleNotify}
-              disabled={isNotifyDisabled()}
-              className={`py-4 px-4 sm:px-6 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center justify-center text-lg sm:text-xl min-h-[48px] hover:scale-105 ${
-                isNotifyDisabled() ? 'opacity-50 cursor-not-allowed' : results.length === 0 && hasSearched ? 'animate-pulse' : ''
-              }`}
-            >
-              <FontAwesomeIcon icon={faBell} className="mr-2" />
-              Notify Me
-            </button>
+            </div>
           </div>
         </form>
       </motion.div>
@@ -876,7 +889,7 @@ const SearchBlood = () => {
         </div>
       )}
 
-      {/* Sorting, Filters, and Results */}
+      {/* Results Section */}
       {hasSearched && (
         <>
           <motion.div
@@ -995,7 +1008,6 @@ const SearchBlood = () => {
                       transition={{ duration: 0.5, delay: index * 0.1, type: 'spring' }}
                       className="bg-gradient-to-br from-white to-red-50 shadow-xl rounded-2xl p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 border border-red-200"
                     >
-                      {/* Header */}
                       <div className="flex justify-between items-start mb-4">
                         <h2 className="text-xl sm:text-2xl font-extrabold text-red-600 leading-tight">
                           {item.name}
@@ -1013,13 +1025,11 @@ const SearchBlood = () => {
                         </button>
                       </div>
 
-                      {/* Details */}
                       <div className="space-y-2 mb-4">
                         <p className="text-sm text-gray-900 flex items-center">
                           <span className="font-semibold w-20">Type:</span> {item.type}
                         </p>
                         <p className="text-sm text-gray-900 flex items-center">
-                          <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-red-600" />
                           <span className="font-semibold w-20">Address:</span> {item.address} (
                           {item.distance.toFixed(1)} km)
                         </p>
@@ -1049,7 +1059,6 @@ const SearchBlood = () => {
                         </p>
                       </div>
 
-                      {/* Blood Availability */}
                       <div className="mb-4">
                         <p className="text-sm font-semibold text-gray-900 mb-2">Available Blood:</p>
                         <div className="flex flex-wrap gap-2">
@@ -1079,7 +1088,6 @@ const SearchBlood = () => {
                         </div>
                       </div>
 
-                      {/* Actions */}
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleRequestBlood(item.name, selectedBloodGroups)}

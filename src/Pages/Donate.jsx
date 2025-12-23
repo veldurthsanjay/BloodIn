@@ -26,39 +26,59 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { createRoot } from 'react-dom/client';
 
-// Generate slots for today (May 29, 2025) to next 4 days (June 2, 2025)
+// Real-time slot generation - Uses actual current date/time
 const generateSlots = () => {
   const slots = [];
-  const today = new Date('2025-05-29T21:06:00+05:30'); // Current date and time: 09:06 PM IST on May 29, 2025
-  const currentHour = today.getHours();
-  const currentMinutes = today.getMinutes();
+  const now = new Date(); // Real current time (e.g., Dec 23, 2025 11:14 AM IST)
 
+  const timeOptions = [
+    { hour: 9, minute: 0 },   // 09:00 AM
+    { hour: 12, minute: 0 },  // 12:00 PM
+    { hour: 15, minute: 0 },  // 03:00 PM
+    { hour: 18, minute: 0 },  // 06:00 PM
+  ];
+
+  // Generate for today + next 4 days
   for (let i = 0; i < 5; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const times = [
-      { hour: 9, minute: 0 },  // 09:00 AM
-      { hour: 12, minute: 0 }, // 12:00 PM
-      { hour: 15, minute: 0 }, // 03:00 PM
-    ];
+    const date = new Date(now);
+    date.setDate(now.getDate() + i);
 
-    times.forEach(({ hour, minute }) => {
-      if (i === 0 && (hour < currentHour || (hour === currentHour && minute <= currentMinutes))) {
-        return; // Skip slots before or at 09:06 PM on May 29
+    timeOptions.forEach(({ hour, minute }) => {
+      // Skip past slots only for today
+      if (i === 0) {
+        const slotTime = new Date(date);
+        slotTime.setHours(hour, minute, 0, 0);
+        if (slotTime <= now) return; // Hide past slots
       }
-      const slotTime = new Date(date);
-      slotTime.setHours(hour, minute, 0, 0);
-      const slotTimeStr = slotTime.toISOString().split('T')[0] + ` ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+      const slotDateTime = new Date(date);
+      slotDateTime.setHours(hour, minute, 0, 0);
+
+      const formattedDate = slotDateTime.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+      const formattedTime = slotDateTime.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      const label = `${formattedDate} at ${formattedTime}`;
+
       slots.push({
-        time: slotTimeStr,
-        available: Math.floor(Math.random() * 5) + 1,
+        time: slotDateTime.toISOString(),
+        label,
+        available: Math.floor(Math.random() * 6) + 1, // 1-6 slots
       });
     });
   }
-  return slots.filter((slot) => slot.available > 0);
+
+  return slots.filter(slot => slot.available > 0);
 };
 
-// Mock hospital data with expanded cities and blood banks
+// Mock hospitals with fresh real-time slots
 const hospitals = [
   { id: 1, name: 'AIIMS Delhi', city: 'Delhi', slots: generateSlots(), highDemand: ['O+', 'A+'] },
   { id: 2, name: 'Safdarjung Hospital', city: 'Delhi', slots: generateSlots(), highDemand: ['O-', 'B+'] },
@@ -82,7 +102,7 @@ const hospitals = [
   { id: 20, name: 'Global Hospital New York', city: 'New York', slots: generateSlots(), highDemand: ['AB-', 'B-'] },
 ];
 
-// Eligibility quiz questions
+// Eligibility questions
 const eligibilityQuestions = [
   { id: 'age', question: 'Are you 18–65 years old?', required: true, info: 'Donors must be within this age range for safety.' },
   { id: 'weight', question: 'Do you weigh at least 50 kg (110 lbs)?', required: true, info: 'Minimum weight ensures safe blood volume donation.' },
@@ -115,7 +135,6 @@ const Donate = () => {
   const [showTooltip, setShowTooltip] = useState(!localStorage.getItem('seenDonateBloodTooltip'));
   const modalRef = useRef(null);
   const certificateRef = useRef(null);
-
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const cities = [
     'Mumbai',
@@ -143,7 +162,6 @@ const Donate = () => {
     },
   ].sort((a, b) => b.points - a.points);
 
-  // Close modal on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -156,7 +174,6 @@ const Donate = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Auto-check eligibility when all questions are answered
   useEffect(() => {
     if (step === 2 && Object.keys(eligibilityAnswers).length === eligibilityQuestions.length) {
       const result = checkEligibility();
@@ -167,34 +184,19 @@ const Donate = () => {
     }
   }, [eligibilityAnswers, step]);
 
-  // Validate form for current step
   const validateStep = () => {
     const newErrors = {};
     if (step === 1) {
-      if (!formData.name.trim()) {
-        newErrors.name = 'Name is required';
-      } else if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
-        newErrors.name = 'Name must contain only alphabets and spaces';
-      }
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required';
-      } else if (!/^\d{10}$/.test(formData.phone.trim())) {
-        newErrors.phone = 'Phone number must be exactly 10 digits';
-      }
-      if (!formData.aadhar.trim()) {
-        newErrors.aadhar = 'Aadhar number is required';
-      } else if (!/^\d{12}$/.test(formData.aadhar.trim())) {
-        newErrors.aadhar = 'Aadhar number must be exactly 12 digits';
-      }
-      if (!formData.bloodGroup) {
-        newErrors.bloodGroup = 'Select a blood group';
-      }
+      if (!formData.name.trim()) newErrors.name = 'Name is required';
+      else if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) newErrors.name = 'Name must contain only alphabets and spaces';
+      if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+      else if (!/^\d{10}$/.test(formData.phone.trim())) newErrors.phone = 'Phone number must be exactly 10 digits';
+      if (!formData.aadhar.trim()) newErrors.aadhar = 'Aadhar number is required';
+      else if (!/^\d{12}$/.test(formData.aadhar.trim())) newErrors.aadhar = 'Aadhar number must be exactly 12 digits';
+      if (!formData.bloodGroup) newErrors.bloodGroup = 'Select a blood group';
     } else if (step === 2) {
-      if (Object.keys(eligibilityAnswers).length < eligibilityQuestions.length) {
-        newErrors.eligibility = 'Please answer all eligibility questions';
-      } else if (isEligible === false) {
-        newErrors.eligibility = 'You are not eligible to proceed';
-      }
+      if (Object.keys(eligibilityAnswers).length < eligibilityQuestions.length) newErrors.eligibility = 'Please answer all eligibility questions';
+      else if (isEligible === false) newErrors.eligibility = 'You are not eligible to proceed';
     } else if (step === 3) {
       if (!formData.city) newErrors.city = 'Select a city';
       if (!formData.hospital) newErrors.hospital = 'Select a hospital';
@@ -203,7 +205,6 @@ const Donate = () => {
     return newErrors;
   };
 
-  // Check eligibility
   const checkEligibility = () => {
     const requiredAnswers = eligibilityQuestions
       .filter((q) => q.required)
@@ -214,7 +215,6 @@ const Donate = () => {
     return requiredAnswers && optionalAnswers;
   };
 
-  // Reset form and localStorage
   const resetFormAndStorage = () => {
     setFormData({
       name: '',
@@ -236,7 +236,6 @@ const Donate = () => {
     localStorage.removeItem('donorBloodGroup');
   };
 
-  // Reset eligibility for retake
   const resetEligibilityForRetake = () => {
     setEligibilityAnswers({});
     setCurrentQuestionIndex(0);
@@ -245,7 +244,6 @@ const Donate = () => {
     setStep(2);
   };
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     const validationErrors = validateStep();
@@ -253,13 +251,11 @@ const Donate = () => {
       setErrors(validationErrors);
       return;
     }
-
     if (step < 4) {
       setStep(step + 1);
       setErrors({});
       return;
     }
-
     const newDonation = {
       ...formData,
       id: `donation-${Date.now()}`,
@@ -268,13 +264,11 @@ const Donate = () => {
     const updatedHistory = [newDonation, ...donationHistory].slice(0, 10);
     setDonationHistory(updatedHistory);
     localStorage.setItem('donationHistory', JSON.stringify(updatedHistory));
-
     console.log('Booking donation:', newDonation);
     setShowConfirmModal(true);
     showToast('Donation booked successfully!');
   };
 
-  // Handle share support for eligibility modal
   const handleShareSupport = () => {
     const shareText = `I support blood donation! Join me in saving lives by donating blood at this amazing platform. #BloodDonation #SaveLives`;
     if (navigator.share) {
@@ -289,7 +283,6 @@ const Donate = () => {
     showToast('Thanks for spreading the word!');
   };
 
-  // Handle share donation
   const handleShare = () => {
     const maskedAadhar = formData.aadhar.replace(/(\d{4})(\d{4})(\d{4})/, 'XXXX XXXX $3');
     const donationId = `DON-${Date.now()}`;
@@ -314,18 +307,15 @@ const Donate = () => {
     showToast('Shared your donation certificate!');
   };
 
-  // Handle check my donation
   const handleCheckDonation = () => {
     console.log('Checking donation:', donationHistory[0]);
     showToast('Viewing your donation details!');
   };
 
-  // Handle download certificate as PDF
   const handleDownloadCertificate = async (donation, isModal = false) => {
     const certificateElement = isModal
       ? certificateRef.current
       : document.createElement('div');
-
     if (!isModal) {
       certificateElement.className = 'bg-white p-6 rounded-xl shadow-2xl border-2 border-red-600 relative overflow-hidden certificate';
       certificateElement.style.width = '400px';
@@ -358,7 +348,6 @@ const Donate = () => {
         </div>
       `;
       document.body.appendChild(certificateElement);
-
       const qrContainer = certificateElement.querySelector('.qrcode-container');
       const qrData = JSON.stringify({
         name: donation.name,
@@ -374,7 +363,6 @@ const Donate = () => {
         }),
         donationId: `DON-${donation.timestamp}`,
       });
-
       const root = createRoot(qrContainer);
       root.render(
         <QRCode
@@ -385,7 +373,6 @@ const Donate = () => {
         />
       );
     }
-
     try {
       const canvas = await html2canvas(certificateElement, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
@@ -405,25 +392,21 @@ const Donate = () => {
       console.error('PDF generation failed:', error);
       showToast('Failed to download certificate.');
     }
-
     if (!isModal) {
       document.body.removeChild(certificateElement);
     }
   };
 
-  // Show toast
   const showToast = (message) => {
     setToast(message);
     setTimeout(() => setToast(''), 3000);
   };
 
-  // Close tooltip
   const closeTooltip = () => {
     setShowTooltip(false);
     localStorage.setItem('seenDonateBloodTooltip', 'true');
   };
 
-  // AI-driven recommendation
   const getRecommendation = () => {
     if (!formData.bloodGroup || !formData.city) return null;
     const hospital = hospitals.find(
@@ -437,7 +420,6 @@ const Donate = () => {
       : `Your ${formData.bloodGroup} donation in ${formData.city} will save lives!`;
   };
 
-  // Navigate to step if valid
   const navigateToStep = (targetStep) => {
     if (targetStep < step) {
       setStep(targetStep);
@@ -454,7 +436,7 @@ const Donate = () => {
 
   return (
     <div className="m-2 p-0 max-w-7xl mx-auto bg-gradient-to-b from-gray-50 to-red-50 min-h-screen last:mb-10">
-      {/* Hero Section (Flush with Top) */}
+      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -725,7 +707,6 @@ const Donate = () => {
                 }}
                 transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
               />
-
               {/* Confetti Particles */}
               {[...Array(15)].map((_, i) => (
                 <motion.div
@@ -749,7 +730,6 @@ const Donate = () => {
                   }}
                 />
               ))}
-
               <div className="z-10">
                 {/* Header with Heartbeat Animation */}
                 <div className="flex justify-between items-center mb-4">
@@ -978,7 +958,6 @@ const Donate = () => {
                 </div>
               </motion.div>
             )}
-
             {step === 2 && (
               <motion.div
                 key="step2"
@@ -1054,7 +1033,6 @@ const Donate = () => {
                     <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
                     Previous
                   </button>
-                  {/* Eligibility Result Summary - Only for Eligible Users */}
                   {Object.keys(eligibilityAnswers).length === eligibilityQuestions.length && isEligible && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -1087,7 +1065,6 @@ const Donate = () => {
                 )}
               </motion.div>
             )}
-
             {step === 3 && (
               <motion.div
                 key="step3"
@@ -1185,6 +1162,7 @@ const Donate = () => {
                     <p className="text-red-600 text-xs sm:text-sm mt-1 animate-shake">{errors.hospital}</p>
                   )}
                 </div>
+                {/* UPDATED DONATION SLOT SECTION */}
                 <div className="relative">
                   <label
                     htmlFor="dateTime"
@@ -1201,9 +1179,7 @@ const Donate = () => {
                       id="dateTime"
                       name="dateTime"
                       value={formData.dateTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, dateTime: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
                       className="mt-1 block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-red-600 focus:border-red-600 text-sm sm:text-base transition-all"
                       disabled={!formData.hospital}
                       aria-invalid={errors.dateTime ? 'true' : 'false'}
@@ -1212,34 +1188,32 @@ const Donate = () => {
                       {formData.hospital &&
                         hospitals
                           .find((h) => h.name === formData.hospital)
-                          ?.slots.filter((s) => s.available > 0)
-                          .map((slot) => (
+                          ?.slots.map((slot) => (
                             <option key={slot.time} value={slot.time}>
-                              {new Date(slot.time).toLocaleString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}{' '}
+                              {slot.label}{' '}
                               <span
-                                className={`text-xs ${
-                                  slot.available > 2 ? 'text-green-600' : 'text-red-600'
+                                className={`font-semibold ${
+                                  slot.available > 3
+                                    ? 'text-green-600'
+                                    : slot.available > 1
+                                    ? 'text-yellow-600'
+                                    : 'text-red-600'
                                 }`}
                               >
-                                ({slot.available} slots left)
+                                ({slot.available} slot{slot.available > 1 ? 's' : ''} left)
                               </span>
                             </option>
                           ))}
                     </select>
                   </div>
                   {errors.dateTime && (
-                    <p className="text-red-600 text-xs sm:text-sm mt-1 animate-shake">{errors.dateTime}</p>
+                    <p className="text-red-600 text-xs sm:text-sm mt-1 animate-shake">
+                      {errors.dateTime}
+                    </p>
                   )}
                 </div>
               </motion.div>
             )}
-
             {step === 4 && (
               <motion.div
                 key="step4"
@@ -1287,7 +1261,6 @@ const Donate = () => {
               </motion.div>
             )}
           </AnimatePresence>
-
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center">
             {step > 1 && (
               <button
