@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { faEye, faEyeSlash, faUser, faEnvelope, faLock, faHeart, faDroplet } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from "../supabase";
+
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -48,7 +50,7 @@ const Auth = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
@@ -59,17 +61,41 @@ const Auth = () => {
     setLoading(true);
     console.log(isSignup ? 'Signup data:' : 'Login data:', formData);
 
-    // Store user data in localStorage
-    localStorage.setItem('authToken', 'mock-token');
-    localStorage.setItem('userData', JSON.stringify({
-      fullName: formData.fullName,
-      email: formData.email,
-      password: formData.password, // Insecure for production; use backend
-    }));
+let error;
 
-    setLoading(false);
-    navigate('/home', { replace: true }); // Navigate to /home
-  };
+if (isSignup) {
+  const response = await supabase
+    .from('signup_entries')
+    .insert([
+      {
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password
+      }
+    ]);
+
+  error = response.error;
+} else {
+  const response = await supabase
+    .from('login_entries')
+    .insert([
+      {
+        email: formData.email,
+        password: formData.password
+      }
+    ]);
+
+  error = response.error;
+}
+
+setLoading(false);
+
+if (error) {
+  setErrors({ form: error.message });
+  return;
+}
+
+navigate('/home', { replace: true });
 
   const handleGoogleSignIn = () => {
     alert('Google Sign-In will be available soon!');
