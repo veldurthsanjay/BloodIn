@@ -96,7 +96,7 @@ if (error) {
 }
 
 navigate('/home', { replace: true });
-
+ };
   const handleGoogleSignIn = () => {
     alert('Google Sign-In will be available soon!');
   };
