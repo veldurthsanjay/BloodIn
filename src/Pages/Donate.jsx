@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -19,6 +20,9 @@ import {
   faDownload,
   faHeart,
   faHandsHolding,
+  faCommentDots,
+  faQuoteLeft,
+  
 } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'react-qr-code';
@@ -148,7 +152,12 @@ const Donate = () => {
     'Vellore',
     'New York',
   ];
-
+const [showStoryModal, setShowStoryModal] = useState(false);
+  const [storyText, setStoryText] = useState('');
+  const [storyImage, setStoryImage] = useState(null);
+  const [stories, setStories] = useState(
+    JSON.parse(localStorage.getItem('donationStories')) || []
+  );
   // Mock leaderboard
   const leaderboard = [
     { name: 'Anita Sharma', city: 'Delhi', donations: 12, points: 1200 },
@@ -307,6 +316,33 @@ const Donate = () => {
     showToast('Shared your donation certificate!');
   };
 
+  // NEW: Handle posting donation story
+  const handlePostStory = () => {
+    if (!storyText.trim()) {
+      showToast('Please write something about your donation experience');
+      return;
+    }
+
+    const newStory = {
+      id: `story-${Date.now()}`,
+      donorName: formData.name,
+      bloodGroup: formData.bloodGroup,
+      hospital: formData.hospital,
+      dateTime: formData.dateTime,
+      story: storyText.trim(),
+      image: storyImage ? storyImage.preview : null,
+      timestamp: Date.now(),
+    };
+
+    const updatedStories = [newStory, ...stories].slice(0, 20);
+    setStories(updatedStories);
+    localStorage.setItem('donationStories', JSON.stringify(updatedStories));
+
+    showToast('Story shared successfully! It will appear in the Recent Stories tab and motivate others.');
+    setShowStoryModal(false);
+    setStoryText('');
+    setStoryImage(null);
+  };
   const handleCheckDonation = () => {
     console.log('Checking donation:', donationHistory[0]);
     showToast('Viewing your donation details!');
@@ -663,6 +699,14 @@ const Donate = () => {
                   >
                     Download PDF
                   </button>
+                  {/* NEW: Share Story Button */}
+                <button
+                  onClick={() => setShowStoryModal(true)}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-violet-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-violet-700 transition-all flex items-center justify-center gap-2 shadow-md"
+                >
+    
+                  Share Your Donation Story
+                </button>
                   <button
                     onClick={handleCheckDonation}
                     className="flex-1 py-2 px-3 bg-yellow-600 text-white rounded-xl font-semibold hover:bg-yellow-700 transition-all text-sm sm:text-base flex items-center justify-center"
@@ -675,7 +719,152 @@ const Donate = () => {
           </motion.div>
         )}
       </AnimatePresence>
+{/* NEW: Story Sharing Modal */}
+<AnimatePresence>
+  {showStoryModal && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] px-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-purple-700 flex items-center gap-2">
+            <FontAwesomeIcon icon={faQuoteLeft} /> Share Your Story
+          </h2>
+          <button
+            onClick={() => {
+              setShowStoryModal(false);
+              setStoryText('');
+              setStoryImage(null);           // clear image when closing
+            }}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <FontAwesomeIcon icon={faTimes} size="lg" />
+          </button>
+        </div>
 
+        <p className="text-gray-600 mb-4 text-sm">
+          Tell others how it felt your story can inspire someone to donate!
+        </p>
+
+        {/* Textarea */}
+        <textarea
+          value={storyText}
+          onChange={(e) => setStoryText(e.target.value)}
+          placeholder="I donated blood today and learned my donation went to a newborn baby in the NICU. It felt incredible knowing I helped save such a tiny life..."
+          className="w-full h-25 p-4 border border-gray-200 rounded-2xl focus:border-purple-500 focus:ring-purple-500 resize-y min-h-[100px] text-base"
+          maxLength={500}
+        />
+        <div className="text-xs text-gray-500 text-right">
+          {storyText.length}/500
+        </div>
+
+        {/* Image Upload Section */}
+        <div className="">
+          <label className="block text-sm font-medium text-gray-700">
+            Add a photo (optional)
+          </label>
+
+          {!storyImage ? (
+            <label className="flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-2 pb-4">
+                <svg
+                  className="w-5 h-5 mb-2 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Click to upload</span> or drag & drop
+                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, JPEG (max 5MB)</p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      alert("Image size should be less than 5MB");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      setStoryImage({
+                        file,
+                        preview: event.target.result, // base64 for preview
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+            </label>
+          ) : (
+            <div className="relative rounded-xl overflow-hidden border border-gray-200">
+              <img
+                src={storyImage.preview}
+                alt="Story preview"
+                className="w-full h-28 object-cover"
+              />
+              <button
+                onClick={() => setStoryImage(null)}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+              >
+                <FontAwesomeIcon icon={faTimes} size="sm" />
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                {storyImage.file.name}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowStoryModal(false);
+              setStoryText('');
+              setStoryImage(null);
+            }}
+            className="flex-1 py-3.5 border border-gray-300 rounded-2xl font-medium hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handlePostStory}
+            disabled={!storyText.trim()}
+            className={`flex-1 py-3.5 rounded-2xl font-semibold shadow transition-all ${
+              storyText.trim()
+                ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Post Story
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       {/* Enhanced Eligibility Failure Modal */}
       <AnimatePresence>
         {showEligibilityModal && (
@@ -1149,12 +1338,9 @@ const Donate = () => {
                       {hospitals
                         .filter((h) => !formData.city || h.city === formData.city)
                         .map((h) => (
-                          <option key={h.id} value={h.name}>
-                            {h.name}{' '}
-                            {formData.bloodGroup && h.highDemand.includes(formData.bloodGroup) && (
-                              <span className="text-red-600 text-xs">(High Demand)</span>
-                            )}
-                          </option>
+                         <option key={h.id} value={h.name}>
+  {h.name} {formData.bloodGroup && h.highDemand.includes(formData.bloodGroup) ? '(High Demand)' : ''}
+</option>
                         ))}
                     </select>
                   </div>
@@ -1189,20 +1375,19 @@ const Donate = () => {
                         hospitals
                           .find((h) => h.name === formData.hospital)
                           ?.slots.map((slot) => (
-                            <option key={slot.time} value={slot.time}>
-                              {slot.label}{' '}
-                              <span
-                                className={`font-semibold ${
-                                  slot.available > 3
-                                    ? 'text-green-600'
-                                    : slot.available > 1
-                                    ? 'text-yellow-600'
-                                    : 'text-red-600'
-                                }`}
-                              >
-                                ({slot.available} slot{slot.available > 1 ? 's' : ''} left)
-                              </span>
-                            </option>
+                            <option
+  key={slot.time}
+  value={slot.time}
+  className={
+    slot.available > 3
+      ? 'text-green-600 font-semibold'
+      : slot.available > 1
+      ? 'text-yellow-600 font-semibold'
+      : 'text-red-600 font-semibold'
+  }
+>
+  {slot.label} ({slot.available} slot{slot.available > 1 ? 's' : ''} left)
+</option>
                           ))}
                     </select>
                   </div>
