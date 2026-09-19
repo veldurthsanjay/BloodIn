@@ -8,26 +8,12 @@ import Donate from './Pages/Donate';
 import Notification from './Pages/Notification';
 import Profile from './Pages/Profile';
 
-// App component
 function App() {
   const location = useLocation();
-
-  const protectedRoutes = [
-    '/home',
-    '/search-blood',
-    '/donate',
-    '/notification',
-    '/profile',
-  ];
+  const appRoutes = ['/home', '/search-blood', '/donate', '/notification', '/profile'];
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <style>{`
-        /* Hide the developer credit popup from the onboarding screen. */
-        div.fixed.inset-0.bg-black\\/70.z-50 {
-          display: none !important;
-        }
-      `}</style>
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<Onboarding />} />
@@ -40,12 +26,11 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      {protectedRoutes.includes(location.pathname) && <BloodConnectNavigator />}
+      {appRoutes.includes(location.pathname) && <BloodConnectNavigator />}
     </div>
   );
 }
 
-// Export App wrapped in Router
 export default function AppWrapper() {
   return (
     <Router>
