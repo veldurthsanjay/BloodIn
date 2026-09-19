@@ -1,7 +1,5 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Onboarding from './Components/Onboarding';
-import Auth from './Components/Auth';
 import BloodConnectNavigator from './Components/BloodConnectNavigator';
 import Home from './Pages/Home';
 import SearchBlood from './Pages/SearchBlood';
@@ -21,13 +19,12 @@ function App() {
     '/profile',
   ];
 
-  
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex-1">
         <Routes>
-          <Route path="/" element={<Onboarding />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/auth" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
           <Route path="/search-blood" element={<SearchBlood />} />
           <Route path="/donate" element={<Donate />} />
