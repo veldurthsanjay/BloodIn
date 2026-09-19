@@ -22,6 +22,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      <style>{`
+        /* Hide the developer credit popup from the onboarding screen. */
+        div.fixed.inset-0.bg-black\\/70.z-50 {
+          display: none !important;
+        }
+      `}</style>
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<Onboarding />} />
